@@ -6,17 +6,12 @@ d <- fread("data/encuesta-de-movilidad-de-bogota-2015_viajes.csv")
 cols <- c("dif_hora", "dif_minuto", "dif_segundo")
 d[, (cols) := tstrsplit(DIFERENCIA_HORAS, ":", fixed = TRUE)]
 d[, (cols) := lapply(.SD, as.numeric), .SDcols = cols]
-d[, ]
+d[, DIFERENCIA_HORAS := dif_hora + dif_minuto/60 + dif_segundo /3600]
+d[, (cols) := NULL]
 
-# Gráfico de las latitudes y longitudes
+# Top de los recorridos que tardan más de una hora (municipios)
+head(d[DIFERENCIA_HORAS > 1, .N, keyby = .(MUNICIPIO_ORIGEN, MUNICIPIO_DESTINO)][order(-N)], 10)
+
+# Gráfico de las distancias con mayor tiempo de recorrido
 require(plotly)
-plot_ly(d[
-    !is.na(LATITUD_DESTINO) & 
-    !is.na(LONGITUD_DESTINO) &
-    LATITUD_DESTINO > 0 &
-    LONGITUD_DESTINO > 0
-  ]
-  , x = ~LONGITUD_DESTINO
-  , y = ~LATITUD_DESTINO
-  , type = "scatter"
-)
+plot_ly(data = d[DIFERENCIA_HORAS > 1], x = ~LATITUD_ORIGEN, y = ~LONGITUD_ORIGEN, type = "scatter")
